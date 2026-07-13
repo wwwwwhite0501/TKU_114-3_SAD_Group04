@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>校園二手教科書媒合與面交管理平台 - 系統原型</title>
+  <!-- Google Fonts Inter & Noto Sans TC -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Noto+Sans+TC:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+  <!-- ========================================== -->
+  <!-- LOGIN & REGISTER PORTAL (登入與註冊入口)       -->
+  <!-- ========================================== -->
+  <div id="loginPortal" class="login-portal-backdrop">
+    <div class="login-box">
+      <div class="login-brand">
+        <div class="login-logo">B</div>
+        <h2>淡江二手教科書平台</h2>
+        <p>校園教科書精準媒合與面交安全系統</p>
+      </div>
+      
+      <div class="login-tabs">
+        <button id="loginTabBtn" class="login-tab-btn active" onclick="switchLoginTab('login')">學號登入</button>
+        <button id="registerTabBtn" class="login-tab-btn" onclick="switchLoginTab('register')">註冊交易帳號</button>
+      </div>
+      
+      <!-- Login View -->
+      <div id="loginView" class="login-tab-content active">
+        <form onsubmit="handleUserLogin(event)">
+          <div class="form-group">
+            <label class="required-dot" for="loginStudentId">學號</label>
+            <input type="text" id="loginStudentId" class="input-control" placeholder="請輸入學號，例如: 411100547" required>
+          </div>
+          <div class="form-group" style="margin-top: 0.75rem;">
+            <label class="required-dot" for="loginPassword">密碼</label>
+            <input type="password" id="loginPassword" class="input-control" placeholder="請輸入密碼 (預設: 123)" required>
+          </div>
+          <button type="submit" class="btn btn-primary" style="width:100%; height:45px; margin-top:1.5rem;">
+            🔓 登入系統
+          </button>
+        </form>
+      </div>
+      
+      <!-- Register View -->
+      <div id="registerView" class="login-tab-content">
+        <form onsubmit="handleUserRegister(event)">
+          <div class="form-group-row">
+            <div class="form-group">
+              <label class="required-dot" for="regName">真實姓名</label>
+              <input type="text" id="regName" class="input-control" placeholder="例如: 陳小華" required>
+            </div>
+            <div class="form-group">
+              <label class="required-dot" for="regStudentId">學號</label>
+              <input type="text" id="regStudentId" class="input-control" placeholder="例如: 411730099" required>
+            </div>
+          </div>
+          <div class="form-group-row">
+            <div class="form-group">
+              <label class="required-dot" for="regDept">科系</label>
+              <input type="text" id="regDept" class="input-control" placeholder="例如: 資訊管理學系" required>
+            </div>
+            <div class="form-group">
+              <label class="required-dot" for="regClass">班級</label>
+              <input type="text" id="regClass" class="input-control" placeholder="例如: A" required>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="required-dot" for="regPassword">密碼</label>
+            <input type="password" id="regPassword" class="input-control" placeholder="請設定您的登入密碼" required>
+          </div>
+          <button type="submit" class="btn btn-primary" style="width:100%; height:45px; margin-top:1.5rem;">
+            📝 註冊帳號並自動登入
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- MAIN SYSTEM APPLICATION INTERFACE          -->
+  <!-- ========================================== -->
+  <div class="app-container">
+    
+    <!-- Sidebar Control Panel -->
+    <aside class="sidebar">
+      
+      <!-- Brand Logo -->
+      <div class="brand-section">
+        <div class="brand-logo">B</div>
+        <div class="brand-name">
+          <h1>淡江二手教科書</h1>
+          <p>校園媒合與面交管理平台</p>
+        </div>
+      </div>
+      
+      <!-- User Profile (Role Simulation) -->
+      <div class="simulator-panel">
+        <div class="panel-title">
+          <span>👤</span> 當前登入者資訊
+        </div>
+        
+        <!-- Active User Details -->
+        <div id="userStatusCard" class="user-status-card">
+          <!-- JavaScript rendered -->
+        </div>
+        
+        <!-- Action Buttons -->
+        <div style="margin-top: 1rem; display: flex; gap: 0.5rem;">
+          <button class="btn btn-secondary btn-xs" style="flex-grow: 1; justify-content:center;" onclick="handleUserLogout()">
+            🚪 登出系統
+          </button>
+        </div>
+        
+        <!-- Appeal dialog will be injected here if the active user is suspended -->
+        <div id="appealBoxContainer"></div>
+      </div>
+      
+      <!-- Double Booking Simulation Tools -->
+      <div class="simulator-panel">
+        <div class="panel-title">
+          <span>⚡</span> 雙重預約衝突測試
+        </div>
+        <p style="font-size: 0.75rem; color: var(--text-secondary); margin-bottom: 0.5rem; line-height: 1.3;">
+          此工具模擬兩個買家「在1秒內同時搶購」同一本書的極端情況，用以檢驗系統「狀態鎖定防重複」的驗收指標。
+        </p>
+        <div class="double-booking-btn-box">
+          <button class="db-demo-btn" onclick="triggerDoubleBookingDemo()">
+            模擬 1 秒內重複預約衝突
+          </button>
+        </div>
+      </div>
+      
+      <!-- System Settings (Theme Toggle) -->
+      <div class="simulator-panel" style="margin-top: 1rem;">
+        <div class="panel-title">
+          <span>🎨</span> 系統主題設定
+        </div>
+        <div style="display: flex; gap: 0.5rem; margin-top: 0.5rem;">
+          <button id="theme-dark-btn" class="btn btn-secondary btn-xs active-theme" style="flex-grow:1; justify-content:center;" onclick="setTheme('dark')">
+            🌌 深色
+          </button>
+          <button id="theme-light-btn" class="btn btn-secondary btn-xs" style="flex-grow:1; justify-content:center;" onclick="setTheme('light')">
+            ☀️ 淺色
+          </button>
+        </div>
+      </div>
+      
+      <!-- System Logs Console (移至預約衝突測試下方，預設隱藏，僅管理員模式開啟) -->
+      <div id="logsConsole" class="system-logs-container" style="display:none; margin-top: 1rem; height: 180px;">
+        <div class="logs-header">
+          <span>🖥️ 系統運作日誌 (Console)</span>
+          <button class="clear-logs-btn" onclick="clearLogs()">清除</button>
+        </div>
+        <div id="logsDisplay" class="logs-display">
+          <!-- Logs will be added here -->
+        </div>
+      </div>
+      
+    </aside>
+    
+    <!-- Main Board -->
+    <main class="main-content">
+      
+      <!-- Navigation Bar (Role Tabs - Naming simplified & ordered) -->
+      <nav class="top-nav">
+        <div class="tabs-navigation">
+          <button id="tab-buyer" class="tab-btn active" onclick="switchTab('buyer')">
+            <span>🔍</span> 搜尋與預約
+          </button>
+          <button id="tab-seller" class="tab-btn" onclick="switchTab('seller')">
+            <span>📤</span> 上架與管理
+          </button>
+          <button id="tab-reserved" class="tab-btn" onclick="switchTab('reserved')">
+            <span>🤝</span> 預約紀錄
+          </button>
+          <button id="tab-noshow-logs" class="tab-btn" onclick="switchTab('noshow-logs')">
+            <span>📋</span> 放鳥回報紀錄
+          </button>
+          <button id="tab-admin" class="tab-btn admin-only" onclick="switchTab('admin')">
+            <span>⚙️</span> 系統管理
+          </button>
+        </div>
+        
+        <div style="font-size: 0.8rem; color: var(--text-muted); display: flex; align-items: center; gap: 0.5rem;">
+          <span style="display:inline-block; width:8px; height:8px; border-radius:50%; background:var(--emerald-green); animation: pulse 2s infinite;"></span>
+          原型狀態: 可操作切片 v3.3
+        </div>
+      </nav>
+      
+      <!-- Main Content Area -->
+      <section class="view-area">
+        
+        <!-- Suspension Alert Overlay Banner -->
+        <div id="suspensionBanner" class="suspension-banner" style="display:none;">
+          🚫 帳號停權警告：您的帳號已被限制交易功能（因放鳥累計達 2 次）。如需恢復，請在左側欄填寫「放鳥爭議申訴表」提交人工審核。
+        </div>
+        
+        <!-- ========================================== -->
+        <!-- BUYER TAB: 搜尋與預約                           -->
+        <!-- ========================================== -->
+        <div id="panel-buyer" class="tab-panel active">
+          
+          <div class="section-title-bar">
+            <h2 class="section-title">搜尋與預約 <span>點擊即可向賣家發起面交預約</span></h2>
+          </div>
+          
+          <!-- Query / Filters Area -->
+          <div class="search-filter-card">
+            <div class="search-grid">
+              
+              <div class="search-field">
+                <label for="searchKeyword">關鍵字模糊搜尋 (書名 / 老師 / ISBN)</label>
+                <input type="text" id="searchKeyword" class="input-control" placeholder="輸入關鍵字... 如：系統分析、張教授、978" oninput="filterBooks()">
+              </div>
+              
+              <div class="search-field">
+                <label>最低價格 (元)</label>
+                <input type="number" id="priceMin" class="input-control" placeholder="不限" oninput="filterBooks()">
+              </div>
+              
+              <div class="search-field">
+                <label>最高價格 (元)</label>
+                <input type="number" id="priceMax" class="input-control" placeholder="不限" oninput="filterBooks()">
+              </div>
+              
+              <button class="reset-filter-btn" onclick="resetFilters()">
+                <span>🔄</span> 重設篩選
+              </button>
+              
+            </div>
+          </div>
+          
+          <!-- Textbooks Grid -->
+          <div id="booksGrid" class="textbook-grid">
+            <!-- JavaScript rendered -->
+          </div>
+          
+        </div>
+
+        <!-- ========================================== -->
+        <!-- SELLER TAB: 上架與管理                           -->
+        <!-- ========================================== -->
+        <div id="panel-seller" class="tab-panel">
+          
+          <div class="section-title-bar">
+            <h2 class="section-title">上架與管理 <span>上架新教科書並維護已上架之書籍狀態</span></h2>
+          </div>
+          
+          <div class="seller-layout">
+            
+            <!-- Book Upload Form (One Page Complete) -->
+            <div class="seller-form-card">
+              <h3 style="font-size: 1.1rem; margin-bottom: 1.25rem; color: var(--light-purple);">📚 快速上架二手教科書</h3>
+              <form id="uploadForm" onsubmit="handleBookUpload(event)">
+                
+                <div class="form-group">
+                  <label class="required-dot" for="bookTitle">科目名稱 (教科書書名)</label>
+                  <input type="text" id="bookTitle" class="input-control" placeholder="例如：系統分析與設計" required>
+                </div>
+                
+                <div class="form-group-row">
+                  <div class="form-group">
+                    <label class="required-dot" for="bookInstructor">開課老師</label>
+                    <input type="text" id="bookInstructor" class="input-control" placeholder="例如：張教授" required>
+                  </div>
+                  <div class="form-group">
+                    <label class="required-dot" for="bookVersion">書籍版本</label>
+                    <input type="text" id="bookVersion" class="input-control" placeholder="例如：第 10 版" required>
+                  </div>
+                </div>
+                
+                <div class="form-group-row">
+                  <div class="form-group">
+                    <label class="required-dot" for="bookIsbn">ISBN (國際標準書號)</label>
+                    <input type="text" id="bookIsbn" class="input-control" placeholder="例如: 9789861548234" required>
+                  </div>
+                  <div class="form-group">
+                    <label class="required-dot" for="bookPrice">欲售價格 (TWD)</label>
+                    <input type="number" id="bookPrice" class="input-control" placeholder="價格" min="0" required>
+                  </div>
+                </div>
+                
+                <div class="form-group">
+                  <label class="required-dot">書況描述</label>
+                  <div class="condition-radio-group">
+                    <div class="condition-radio">
+                      <input type="radio" name="bookCondition" id="cond-new" value="全新 (完全無劃記)" checked>
+                      <label class="condition-label" for="cond-new">全新無劃記</label>
+                    </div>
+                    <div class="condition-radio">
+                      <input type="radio" name="bookCondition" id="cond-fine" value="九成新 (僅些微原子筆畫線)">
+                      <label class="condition-label" for="cond-fine">九成新</label>
+                    </div>
+                    <div class="condition-radio">
+                      <input type="radio" name="bookCondition" id="cond-good" value="八成新 (有鉛筆與螢光筆劃記)">
+                      <label class="condition-label" for="cond-good">八成新</label>
+                    </div>
+                    <div class="condition-radio">
+                      <input type="radio" name="bookCondition" id="cond-used" value="五成新 (外皮磨損，塗寫較多)">
+                      <label class="condition-label" for="cond-used">五成新</label>
+                    </div>
+                  </div>
+                </div>
+                
+                <div class="form-group">
+                  <label class="required-dot" for="bookLocation">預期面交地點</label>
+                  <input type="text" id="bookLocation" class="input-control" placeholder="例如：商管大樓 B301 門口、圖書館前" required>
+                </div>
+                
+                <!-- Meetup Notes Field (Required for finding each other) -->
+                <div class="form-group">
+                  <label class="required-dot" for="bookMeetupNote">面交約定細節備註 (時間、穿著衣服樣式)</label>
+                  <input type="text" id="bookMeetupNote" class="input-control" placeholder="例如: 週三中午12點在圖書館前，我穿紅色帽衫、背黑包包" required>
+                </div>
+                
+                <div style="margin-top: 1.5rem;">
+                  <button type="submit" class="btn btn-primary" style="width: 100%; height: 45px; font-size: 0.95rem;">
+                    🚀 送出並立刻上架
+                  </button>
+                </div>
+                
+              </form>
+            </div>
+            
+            <!-- Book Listings Management -->
+            <div class="listings-panel">
+              <h3 style="font-size: 1.1rem; margin-bottom: 1.25rem; color: var(--baby-blue);">📋 我的上架書籍管理 (上架中 / 已售出)</h3>
+              <div id="sellerListingsList" class="listings-list">
+                <!-- JavaScript rendered -->
+              </div>
+            </div>
+            
+          </div>
+          
+        </div>
+
+        <!-- ========================================== -->
+        <!-- RESERVED TAB: 預約紀錄 (買家/賣家動態頁面)      -->
+        <!-- ========================================== -->
+        <div id="panel-reserved" class="tab-panel">
+          
+          <div class="section-title-bar">
+            <h2 class="section-title" id="reservedTitleHeader">預約紀錄 <span id="reservedSubtitleHeader">追蹤面交進度</span></h2>
+          </div>
+          
+          <div id="reservationsContainer" class="buyer-reservations-container">
+            <!-- JavaScript rendered based on Buyer or Seller activeRole -->
+          </div>
+          
+        </div>
+        
+        <!-- ========================================== -->
+        <!-- NOSHOW-LOGS TAB: 放鳥回報紀錄 (買家/賣家放鳥回報紀錄) -->
+        <!-- ========================================== -->
+        <div id="panel-noshow-logs" class="tab-panel">
+          
+          <div class="section-title-bar">
+            <h2 class="section-title">放鳥回報紀錄 <span>檢視我提交的與我收到的放鳥回報案件</span></h2>
+          </div>
+          
+          <div class="admin-grid">
+            <!-- Left Card: Reports I Submitted -->
+            <div class="admin-card">
+              <h3 style="font-size: 1.1rem; margin-bottom: 1.25rem; color: var(--baby-blue);">📤 我提交的放鳥檢舉紀錄</h3>
+              <div id="mySubmittedNoShows" class="admin-card-list">
+                <!-- JS rendered -->
+              </div>
+            </div>
+            
+            <!-- Right Card: Reports Received Against Me -->
+            <div class="admin-card">
+              <h3 style="font-size: 1.1rem; margin-bottom: 1.25rem; color: var(--rose-red);">📥 我被舉報的放鳥紀錄 (可在此進行爭議申訴)</h3>
+              <div id="myReceivedNoShows" class="admin-card-list">
+                <!-- JS rendered -->
+              </div>
+            </div>
+          </div>
+          
+        </div>
+        
+        <!-- ========================================== -->
+        <!-- ADMIN TAB: 系統管理                             -->
+        <!-- ========================================== -->
+        <div id="panel-admin" class="tab-panel">
+          
+          <div class="section-title-bar">
+            <h2 class="section-title">系統管理 <span>審核放鳥申訴與違規非書本檢舉</span></h2>
+          </div>
+          
+          <div class="admin-grid">
+            
+            <!-- Flagged listings and items -->
+            <div class="admin-card">
+              <h3 style="font-size: 1.1rem; margin-bottom: 1.25rem; color: var(--rose-red);">⚠️ 檢舉違規商品審查 (非教科書之雜物)</h3>
+              <div id="adminReportsList" class="admin-card-list">
+                <!-- JavaScript rendered -->
+              </div>
+            </div>
+            
+            <!-- Suspended Users & Appeals -->
+            <div class="admin-card">
+              <h3 style="font-size: 1.1rem; margin-bottom: 1.25rem; color: var(--light-purple);">⚖️ 學生帳號狀態與放鳥申訴審理</h3>
+              <div id="adminAppealsList" class="admin-card-list">
+                <!-- JavaScript rendered -->
+              </div>
+            </div>
+            
+          </div>
+          
+        </div>
+        
+      </section>
+      
+    </main>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- MODAL: 面交確認單 / 收據                    -->
+  <!-- ========================================== -->
+  <div id="meetingModal" class="modal-backdrop" onclick="closeMeetingModal(event)">
+    <div class="modal-container" onclick="event.stopPropagation()">
+      
+      <div class="ticket-wrapper">
+        <div class="ticket-header">
+          <h3>面交確認單</h3>
+          <p>系統自動生成・現場取貨付款</p>
+        </div>
+        
+        <div id="ticketDetails" class="ticket-body">
+          <!-- JavaScript rendered -->
+        </div>
+        
+        <div class="ticket-footer">
+          雙方於現場確認書籍狀態後，請由賣家在系統點擊「確認交易完成」。<br>
+          如有一方未出席，可於預約紀錄分頁中點擊「放鳥回報」。
+        </div>
+      </div>
+      
+      <div class="modal-actions">
+        <button class="btn btn-primary" style="width: 100%;" onclick="closeMeetingModal(null)">
+          我已閱讀並確認面交細節
+        </button>
+      </div>
+      
+    </div>
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div id="toastContainer" class="toast-container"></div>
+
+  <!-- App Logic Scripts -->
+  <script src="mockData.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
