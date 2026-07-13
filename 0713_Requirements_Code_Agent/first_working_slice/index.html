@@ -1,0 +1,928 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>淡江大學二手教科書結構化媒合平台 | TKU BookMatch</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Google Fonts: Outfit & Inter for premium typography -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&family=Noto+Sans+TC:wght@300;400;500;700&display=swap" rel="stylesheet">
+  
+  <style>
+    body {
+      font-family: 'Outfit', 'Inter', 'Noto Sans TC', sans-serif;
+      background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+      min-height: 100vh;
+    }
+    .glass-card {
+      background: rgba(255, 255, 255, 0.75);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.4);
+    }
+    .glass-modal {
+      background: rgba(255, 255, 255, 0.85);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 255, 255, 0.5);
+    }
+    .text-gradient {
+      background: linear-gradient(135deg, #4f46e5 0%, #8b5cf6 50%, #d946ef 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .btn-gradient {
+      background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .btn-gradient:hover {
+      background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+      transform: translateY(-2px);
+      box-shadow: 0 10px 20px -10px rgba(99, 102, 241, 0.5);
+    }
+    .btn-gradient:active {
+      transform: translateY(0);
+    }
+    .card-hover {
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .card-hover:hover {
+      transform: translateY(-4px) scale(1.01);
+      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    }
+    .badge-shining {
+      position: relative;
+      overflow: hidden;
+    }
+    .badge-shining::after {
+      content: '';
+      position: absolute;
+      top: 0; left: -100%; width: 100%; height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+      transition: all 0.6s ease;
+    }
+    .badge-shining:hover::after {
+      left: 100%;
+    }
+    /* Simple Animation */
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .animate-fade-in {
+      animation: fadeIn 0.4s ease-out forwards;
+    }
+    /* Toast slide-in */
+    @keyframes slideIn {
+      from { transform: translateY(100%) translateX(-50%); opacity: 0; }
+      to { transform: translateY(0) translateX(-50%); opacity: 1; }
+    }
+    .toast-anim {
+      animation: slideIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+  </style>
+</head>
+<body class="text-slate-800 antialiased p-4 md:p-8">
+
+  <!-- Header Section -->
+  <header class="max-w-6xl mx-auto mb-8 animate-fade-in">
+    <div class="glass-card rounded-3xl p-6 md:p-8 flex flex-col md:flex-row justify-between items-center gap-6 shadow-sm border">
+      <div class="flex items-center gap-4">
+        <div class="h-12 w-12 rounded-2xl bg-gradient-to-tr from-indigo-500 via-purple-500 to-pink-500 flex items-center justify-center text-white font-extrabold text-2xl shadow-md">
+          T
+        </div>
+        <div>
+          <h1 class="text-2xl md:text-3xl font-extrabold tracking-tight text-gradient">淡江二手書媒合平台</h1>
+          <p class="text-xs md:text-sm text-slate-500 font-medium">基於結構化查詢的教科書流轉原型系統</p>
+        </div>
+      </div>
+      
+      <!-- Role Toggle Panel (對應 NFR-01) -->
+      <div class="flex flex-col items-center sm:items-end gap-2">
+        <span class="text-xs text-slate-400 font-semibold uppercase tracking-wider">選擇身分切換模式</span>
+        <div class="bg-slate-200/80 p-1 rounded-2xl flex gap-1 shadow-inner border border-slate-300/40 relative">
+          <!-- 切換為買家按鈕 -->
+          <button id="role-buyer-btn" onclick="switchRole('buyer')" class="px-5 py-2.5 rounded-xl text-sm font-bold transition-all duration-300 flex items-center gap-2 shadow-sm bg-white text-indigo-600">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+            切換為買家
+          </button>
+          <!-- 切換為賣家按鈕 -->
+          <button id="role-seller-btn" onclick="switchRole('seller')" class="px-5 py-2.5 rounded-xl text-sm font-bold transition-all duration-300 flex items-center gap-2 text-slate-600 hover:text-slate-900">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"></path></svg>
+            切換為賣家
+          </button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <main class="max-w-6xl mx-auto grid grid-cols-1 gap-8 animate-fade-in" style="animation-delay: 0.1s;">
+    
+    <!-- Active Role Banner -->
+    <div class="glass-card rounded-2xl px-6 py-4 flex items-center justify-between border shadow-sm">
+      <div class="flex items-center gap-3">
+        <span class="relative flex h-3.5 w-3.5">
+          <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
+          <span id="role-indicator-dot" class="relative inline-flex rounded-full h-3.5 w-3.5 bg-indigo-600"></span>
+        </span>
+        <span class="text-sm font-bold text-slate-700">目前身分：<span id="role-text" class="text-indigo-600">買家學生 (學生查詢與預約)</span></span>
+      </div>
+      <!-- Cash Constraint Tip (對應 CON-01) -->
+      <span class="hidden sm:inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-amber-50 text-amber-700 border border-amber-200">
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+        本系統僅支援實體面交收現 (無第三方金流)
+      </span>
+    </div>
+
+    <!-- CONTROL PANELS SECTION -->
+    <section>
+      
+      <!-- 1. Seller Panel: Book Listing Form (對應 FR-01) -->
+      <div id="seller-panel" class="hidden glass-card rounded-3xl p-6 md:p-8 shadow-md border animate-fade-in">
+        <div class="mb-6 flex justify-between items-center">
+          <div>
+            <h2 class="text-xl font-extrabold text-slate-800 flex items-center gap-2">
+              <svg class="w-5.5 h-5.5 text-indigo-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25"></path></svg>
+              書籍上架（結構化刊登）
+            </h2>
+            <p class="text-xs text-slate-500 mt-1">請填寫完整的書籍結構化欄位，避免買家以關鍵字搜尋時產生遺漏。</p>
+          </div>
+          <span class="px-2.5 py-1 text-xs font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-md">賣家模式</span>
+        </div>
+
+        <form id="listing-form" onsubmit="handlePublish(event)" class="space-y-6">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <!-- 書籍名稱 -->
+            <div class="flex flex-col gap-2">
+              <label for="book-title" class="text-xs font-bold text-slate-600 tracking-wide">書籍完整名稱 <span class="text-rose-500">*</span></label>
+              <input type="text" id="book-title" placeholder="如：Systems Analysis and Design Methods 7th Edition" required
+                class="px-4 py-3 rounded-xl border border-slate-200 bg-white/50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all font-medium placeholder-slate-400 text-sm">
+            </div>
+
+            <!-- 對應科目 (自由手打輸入框，不使用死板的下拉選單，滿足驗收條件 2) -->
+            <div class="flex flex-col gap-2">
+              <label for="book-subject" class="text-xs font-bold text-slate-600 tracking-wide">對應科目 <span class="text-rose-500">*</span></label>
+              <input type="text" id="book-subject" placeholder="請手打科目，例如：系統分析與設計" required
+                class="px-4 py-3 rounded-xl border border-slate-200 bg-white/50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all font-medium placeholder-slate-400 text-sm">
+            </div>
+
+            <!-- 老師 -->
+            <div class="flex flex-col gap-2">
+              <label for="book-teacher" class="text-xs font-bold text-slate-600 tracking-wide">授課老師姓名 <span class="text-rose-500">*</span></label>
+              <input type="text" id="book-teacher" placeholder="如：陳建甫" required
+                class="px-4 py-3 rounded-xl border border-slate-200 bg-white/50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all font-medium placeholder-slate-400 text-sm">
+            </div>
+
+            <!-- ISBN -->
+            <div class="flex flex-col gap-2">
+              <label for="book-isbn" class="text-xs font-bold text-slate-600 tracking-wide">ISBN 碼 <span class="text-rose-500">*</span></label>
+              <input type="text" id="book-isbn" placeholder="如：9789862803875" required
+                class="px-4 py-3 rounded-xl border border-slate-200 bg-white/50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all font-medium placeholder-slate-400 text-sm">
+            </div>
+
+            <!-- 售價 -->
+            <div class="flex flex-col gap-2">
+              <label for="book-price" class="text-xs font-bold text-slate-600 tracking-wide">二手售價 (TWD) <span class="text-rose-500">*</span></label>
+              <div class="relative">
+                <span class="absolute left-4 top-3 text-slate-400 font-semibold text-sm">$</span>
+                <input type="number" id="book-price" min="0" placeholder="500" required
+                  class="pl-8 pr-4 py-3 w-full rounded-xl border border-slate-200 bg-white/50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all font-medium placeholder-slate-400 text-sm">
+              </div>
+            </div>
+
+            <!-- 刊登賣家 (模擬目前登入的賣家身分) -->
+            <div class="flex flex-col gap-2">
+              <label for="book-seller" class="text-xs font-bold text-slate-600 tracking-wide">刊登賣家稱呼 <span class="text-rose-500">*</span></label>
+              <input type="text" id="book-seller" placeholder="如：陳同學" required
+                class="px-4 py-3 rounded-xl border border-slate-200 bg-white/50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all font-medium placeholder-slate-400 text-sm">
+            </div>
+          </div>
+
+          <div class="flex justify-end gap-3 pt-2">
+            <button type="button" onclick="clearForm()" class="px-6 py-3 rounded-xl text-sm font-semibold border border-slate-200 bg-white hover:bg-slate-50 transition-colors text-slate-600">
+              清空欄位
+            </button>
+            <button type="submit" class="px-8 py-3 rounded-xl text-sm font-bold text-white btn-gradient flex items-center gap-2">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"></path></svg>
+              送出刊登
+            </button>
+          </div>
+        </form>
+      </div>
+
+      <!-- 2. Buyer Panel: Textbook search engine (對應 FR-02) -->
+      <div id="buyer-panel" class="glass-card rounded-3xl p-6 md:p-8 shadow-md border animate-fade-in">
+        <div class="mb-6">
+          <h2 class="text-xl font-extrabold text-slate-800 flex items-center gap-2">
+            <svg class="w-5.5 h-5.5 text-indigo-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+            結構化精準搜尋
+          </h2>
+          <p class="text-xs text-slate-500 mt-1">即時根據授課老師姓名、科目關鍵字或書籍完整名稱，快速尋找你所需要的上課教科書。</p>
+        </div>
+
+        <div class="relative max-w-2xl">
+          <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+            <svg class="h-5 w-5 text-indigo-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+            </svg>
+          </div>
+          <!-- 搜尋輸入框，即時監聽 keyup/input (對應 FR-02) -->
+          <input type="text" id="search-input" oninput="handleSearch()" placeholder="請輸入老師姓名、科目或書籍名稱關鍵字..." 
+            class="w-full pl-11 pr-4 py-3.5 rounded-2xl border border-slate-200 bg-white/70 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all font-medium placeholder-slate-400 shadow-sm text-sm">
+          
+          <button onclick="clearSearch()" class="absolute inset-y-0 right-0 pr-4 flex items-center text-slate-400 hover:text-slate-600 text-xs font-semibold">
+            清除
+          </button>
+        </div>
+        
+        <!-- Popular tags suggestion -->
+        <div class="flex flex-wrap gap-2 mt-4 items-center">
+          <span class="text-xs text-slate-400 font-bold uppercase tracking-wider mr-1">熱門科目搜尋：</span>
+          <button onclick="applyQuickSearch('系統分析與設計')" class="px-3 py-1.5 rounded-xl text-xs font-semibold bg-indigo-50 text-indigo-600 border border-indigo-100 hover:bg-indigo-100 transition-colors">系統分析與設計</button>
+          <button onclick="applyQuickSearch('陳建甫')" class="px-3 py-1.5 rounded-xl text-xs font-semibold bg-indigo-50 text-indigo-600 border border-indigo-100 hover:bg-indigo-100 transition-colors">陳建甫 老師</button>
+          <button onclick="applyQuickSearch('資料庫系統')" class="px-3 py-1.5 rounded-xl text-xs font-semibold bg-purple-50 text-purple-600 border border-purple-100 hover:bg-purple-100 transition-colors">資料庫系統</button>
+          <button onclick="applyQuickSearch('軟體工程')" class="px-3 py-1.5 rounded-xl text-xs font-semibold bg-pink-50 text-pink-600 border border-pink-100 hover:bg-pink-100 transition-colors">軟體工程</button>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- BOOKS CATALOGUE SECTION -->
+    <section class="space-y-6">
+      <div class="flex justify-between items-center">
+        <div>
+          <h2 class="text-2xl font-extrabold text-slate-800 tracking-tight">當前二手書刊登目錄</h2>
+          <p class="text-xs text-slate-500 mt-1">目前校園內上架中、已預約或被停權處置的書籍狀態流轉清單</p>
+        </div>
+        <span class="text-xs font-bold text-slate-500 bg-slate-200/80 border px-3 py-1.5 rounded-xl">
+          共 <span id="books-count" class="text-indigo-600">3</span> 本書
+        </span>
+      </div>
+
+      <!-- Warning panel for Suspended Users (對應 FR-05) -->
+      <div id="suspension-warning-box" class="hidden glass-card border-rose-200 bg-rose-50/50 rounded-2xl p-4 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 animate-fade-in">
+        <div class="flex gap-3">
+          <div class="h-10 w-10 shrink-0 rounded-xl bg-rose-100 flex items-center justify-center text-rose-600">
+            <svg class="w-5.5 h-5.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+          </div>
+          <div>
+            <h4 class="text-sm font-bold text-rose-800">偵測到帳號停權警告</h4>
+            <p class="text-xs text-rose-600 mt-0.5">有賣家因惡意放鳥面交累計達 2 次，其旗下所有商品已被系統變更為停權狀態。</p>
+          </div>
+        </div>
+        <div class="flex flex-wrap gap-1.5 text-xs text-rose-700 font-bold">
+          被停權賣家名單：<span id="suspended-list" class="underline">無</span>
+        </div>
+      </div>
+
+      <!-- Books Grid (對應 FR-01, FR-02, FR-03, FR-05) -->
+      <div id="books-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <!-- Book cards will be dynamically rendered here -->
+      </div>
+      
+      <!-- Empty state -->
+      <div id="empty-state" class="hidden py-16 flex flex-col items-center justify-center text-center glass-card rounded-3xl border">
+        <div class="h-16 w-16 rounded-full bg-slate-100 flex items-center justify-center text-slate-400 mb-4">
+          <svg class="w-8 h-8" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path></svg>
+        </div>
+        <h3 class="text-base font-bold text-slate-700">找不到相符的教科書</h3>
+        <p class="text-xs text-slate-400 mt-1 max-w-xs">沒有找到任何科目、老師或書名相符的教科書。請重新搜尋或切換賣家刊登。</p>
+      </div>
+
+    </section>
+  </main>
+
+  <!-- Footnote -->
+  <footer class="max-w-6xl mx-auto mt-16 mb-8 text-center text-xs text-slate-400 font-medium">
+    <p>© 2026 淡江大學資訊管理學系 系統分析與設計小組第四組。採用本機記憶體陣列模擬。</p>
+  </footer>
+
+  <!-- RESERVATION MODAL (對應 FR-03) -->
+  <div id="reservation-modal" class="hidden fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-4">
+    <!-- Backdrop -->
+    <div class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity" onclick="closeReservationModal()"></div>
+    
+    <!-- Modal Content Box -->
+    <div class="relative glass-modal rounded-3xl p-6 md:p-8 max-w-md w-full shadow-2xl border animate-fade-in">
+      <div class="flex justify-between items-start mb-6">
+        <div>
+          <h3 class="text-lg font-extrabold text-slate-800">點選預約面交購買</h3>
+          <p class="text-xs text-slate-500 mt-1">選定面交地標與描述個人特徵，以便在實體地點會面交貨。</p>
+        </div>
+        <button onclick="closeReservationModal()" class="text-slate-400 hover:text-slate-600 transition-colors p-1">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"></path></svg>
+        </button>
+      </div>
+
+      <div class="space-y-4 mb-6">
+        <div class="bg-indigo-50/50 border border-indigo-100 rounded-xl p-3.5 text-xs text-slate-600">
+          <div class="font-bold text-indigo-700 mb-1" id="modal-book-title">書籍名稱</div>
+          <div class="flex justify-between mt-1">
+            <span>老師：<b id="modal-book-teacher" class="text-slate-800">陳老師</b></span>
+            <span>價格：<b id="modal-book-price" class="text-indigo-600">$500</b></span>
+          </div>
+          <div class="mt-1">賣家：<span id="modal-book-seller" class="text-slate-800">李同學</span></div>
+        </div>
+
+        <form id="reservation-form" onsubmit="submitReservation(event)" class="space-y-4">
+          <!-- Hidden Input for Book ID -->
+          <input type="hidden" id="modal-book-id">
+
+          <!-- 面交地點選擇 (對應 FR-03, INT-03/INT-01 常用地標) -->
+          <div class="flex flex-col gap-1.5">
+            <label for="meetup-location" class="text-xs font-bold text-slate-600">選擇面交地點 <span class="text-rose-500">*</span></label>
+            <select id="meetup-location" required class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm font-medium">
+              <option value="" disabled selected>請選擇淡江校園常用地標</option>
+              <option value="商館大樓 (B)">商館大樓 (B)</option>
+              <option value="工學大樓 (E)">工學大樓 (E)</option>
+              <option value="宮燈教室">宮燈教室</option>
+              <option value="覺生紀念圖書館前">覺生紀念圖書館前</option>
+              <option value="淡水捷運站前郵局">淡水捷運站前郵局</option>
+              <option value="五虎崗綜合體育館">五虎崗綜合體育館</option>
+            </select>
+          </div>
+
+          <!-- 外觀特徵備註 (對應 FR-03) -->
+          <div class="flex flex-col gap-1.5">
+            <label for="meetup-note" class="text-xs font-bold text-slate-600">買家外觀特徵備註 <span class="text-rose-500">*</span></label>
+            <textarea id="meetup-note" required rows="3" placeholder="請描述面交時的外觀特徵，以防彼此擦肩而過。例如：我穿著綠色帽T、背藍色後背包，手拿粉紅色飲料提袋。"
+              class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 text-xs font-medium resize-none placeholder-slate-400"></textarea>
+          </div>
+
+          <!-- Cash only notice (對應 CON-01) -->
+          <div class="bg-amber-50 text-amber-800 text-[10px] p-2.5 rounded-lg border border-amber-200 leading-relaxed font-semibold">
+            提醒：本筆交易約定採現場面交收現。平台無線上支付，請於面交時攜帶足額現金。
+          </div>
+
+          <div class="flex justify-end gap-3 pt-2">
+            <button type="button" onclick="closeReservationModal()" class="px-5 py-2.5 rounded-xl text-xs font-semibold border border-slate-200 bg-white hover:bg-slate-50 transition-colors text-slate-500">
+              取消
+            </button>
+            <button type="submit" class="px-6 py-2.5 rounded-xl text-xs font-bold text-white btn-gradient">
+              確認送出預約
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- TOAST NOTIFICATION BANNER -->
+  <div id="toast-container" class="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 pointer-events-none flex flex-col gap-2 w-full max-w-sm px-4">
+    <!-- Toast templates will be generated here -->
+  </div>
+
+
+  <!-- JAVASCRIPT STATE CONTROL LOGIC -->
+  <script>
+    // --- 1. STATE INITIALIZATION ---
+    // 假資料庫記憶體陣列，頁面重整會還原
+    let books = [
+      {
+        id: 1,
+        title: "系統分析與設計 (Systems Analysis and Design Methods 7th)",
+        subject: "系統分析與設計",
+        teacher: "陳建甫",
+        isbn: "9789862803875",
+        price: 450,
+        status: "上架中", // 上架中, 已預約, 停權中
+        seller: "李同學",
+        meetupLocation: "",
+        meetupNote: "",
+        reports: 0
+      },
+      {
+        id: 2,
+        title: "軟體工程：實務方法與案例研究 (Software Engineering)",
+        subject: "軟體工程",
+        teacher: "張昭憲",
+        isbn: "9789861547781",
+        price: 500,
+        status: "上架中",
+        seller: "陳同學",
+        meetupLocation: "",
+        meetupNote: "",
+        reports: 0
+      },
+      {
+        id: 3,
+        title: "資料庫系統原理 (Fundamentals of Database Systems)",
+        subject: "資料庫系統",
+        teacher: "梁德昭",
+        isbn: "9780133970777",
+        price: 600,
+        status: "上架中",
+        seller: "王同學",
+        meetupLocation: "",
+        meetupNote: "",
+        reports: 0
+      }
+    ];
+
+    // 已被停權的賣家清單
+    let suspendedSellers = new Set();
+
+    // 系統當前登入身分
+    let currentRole = "buyer"; // buyer 或 seller
+
+    // 儲存每本書被各別檢舉的次數 mapping (對應 FR-05)
+    let bookPenaltyCounter = {};
+
+    // 初始化檢舉計數器
+    function initPenaltyCounter() {
+      books.forEach(book => {
+        if (!bookPenaltyCounter[book.id]) {
+          bookPenaltyCounter[book.id] = book.reports || 0;
+        }
+      });
+    }
+
+    // --- 2. ROLE SWITCH CONTROLLERS (對應 NFR-01) ---
+    // 切換角色面板顯示隱藏
+    function switchRole(role) {
+      currentRole = role;
+      
+      const buyerBtn = document.getElementById("role-buyer-btn");
+      const sellerBtn = document.getElementById("role-seller-btn");
+      const buyerPanel = document.getElementById("buyer-panel");
+      const sellerPanel = document.getElementById("seller-panel");
+      const roleText = document.getElementById("role-text");
+      const roleIndicatorDot = document.getElementById("role-indicator-dot");
+
+      if (role === "buyer") {
+        // 更新頂部按鈕狀態
+        buyerBtn.className = "px-5 py-2.5 rounded-xl text-sm font-bold transition-all duration-300 flex items-center gap-2 shadow-sm bg-white text-indigo-600";
+        sellerBtn.className = "px-5 py-2.5 rounded-xl text-sm font-bold transition-all duration-300 flex items-center gap-2 text-slate-600 hover:text-slate-900";
+        
+        // 切換對應控制面板顯示隱藏 (對應 NFR-01 驗收條件 1)
+        buyerPanel.classList.remove("hidden");
+        sellerPanel.classList.add("hidden");
+
+        // 更新文字
+        roleText.textContent = "買家學生 (學生查詢與預約)";
+        roleText.className = "text-indigo-600";
+        roleIndicatorDot.className = "relative inline-flex rounded-full h-3.5 w-3.5 bg-indigo-600";
+
+        showToast("切換為 買家模式", "現在您可以進行精準關鍵字查詢並點選預約購買。");
+      } else {
+        // 更新頂部按鈕狀態
+        buyerBtn.className = "px-5 py-2.5 rounded-xl text-sm font-bold transition-all duration-300 flex items-center gap-2 text-slate-600 hover:text-slate-900";
+        sellerBtn.className = "px-5 py-2.5 rounded-xl text-sm font-bold transition-all duration-300 flex items-center gap-2 shadow-sm bg-white text-emerald-600";
+
+        // 切換對應控制面板顯示隱藏 (對應 NFR-01 驗收條件 1)
+        buyerPanel.classList.add("hidden");
+        sellerPanel.classList.remove("hidden");
+
+        // 更新文字
+        roleText.textContent = "賣家學生 (結構化教科書刊登)";
+        roleText.className = "text-emerald-600";
+        roleIndicatorDot.className = "relative inline-flex rounded-full h-3.5 w-3.5 bg-emerald-600";
+
+        showToast("切換為 賣家模式", "現在您可以輸入結構化學術欄位，將二手書上架供買家搜尋。");
+      }
+      
+      // 切換角色時，重新渲染書籍列表（例如，部分按鈕的顯示可能跟身分有關）
+      renderBooks();
+    }
+
+    // --- 3. SELLER ACTION: PUBLISH BOOK (對應 FR-01) ---
+    // 處理賣家表單送出上架
+    function handlePublish(event) {
+      event.preventDefault(); // 阻止頁面重整
+
+      // 讀取結構化表單內容 (對應 FR-01 驗收條件 2)
+      const title = document.getElementById("book-title").value.trim();
+      const subject = document.getElementById("book-subject").value.trim(); // 自由手打輸入
+      const teacher = document.getElementById("book-teacher").value.trim();
+      const isbn = document.getElementById("book-isbn").value.trim();
+      const price = parseInt(document.getElementById("book-price").value) || 0;
+      const seller = document.getElementById("book-seller").value.trim();
+
+      // 防呆驗證
+      if (!title || !subject || !teacher || !isbn || !price || !seller) {
+        showToast("刊登失敗", "所有必填欄位 (*) 皆須填寫！", "error");
+        return;
+      }
+
+      // 新增一筆書籍物件
+      const newBook = {
+        id: books.length > 0 ? Math.max(...books.map(b => b.id)) + 1 : 1,
+        title: title,
+        subject: subject,
+        teacher: teacher,
+        isbn: isbn,
+        price: price,
+        status: "上架中", // 預設標籤為綠色「上架中」 (對應 FR-01 驗收條件 2)
+        seller: seller,
+        meetupLocation: "",
+        meetupNote: "",
+        reports: 0
+      };
+
+      // 檢查賣家是否已經在停權清單中
+      if (suspendedSellers.has(seller)) {
+        newBook.status = "停權中";
+        showToast("警告：停權賣家上架", `賣家 [${seller}] 目前已被停權，該書籍已自動標記為「停權中」。`, "error");
+      }
+
+      // 寫入 JS 記憶體陣列
+      books.unshift(newBook); // 新增在最前面
+      bookPenaltyCounter[newBook.id] = 0; // 初始化檢舉次數
+
+      // 清空表單
+      clearForm();
+
+      // 觸發重新渲染書籍列表
+      renderBooks();
+
+      showToast("刊登成功！", `《${title}》已成功上架。標籤為：上架中。`, "success");
+    }
+
+    // 清空賣家表單
+    function clearForm() {
+      document.getElementById("listing-form").reset();
+    }
+
+    // --- 4. BUYER ACTION: SEARCH & FILTER (對應 FR-02) ---
+    // 買家搜尋框鍵入篩選
+    function handleSearch() {
+      renderBooks();
+    }
+
+    // 點選快捷熱門搜尋
+    function applyQuickSearch(keyword) {
+      const searchInput = document.getElementById("search-input");
+      searchInput.value = keyword;
+      
+      // 如果目前是賣家，先自動幫他切換為買家，方便查看搜尋結果
+      if (currentRole !== "buyer") {
+        switchRole("buyer");
+      }
+      
+      renderBooks();
+      showToast("搜尋過濾器已套用", `已篩選關鍵字："${keyword}"`);
+    }
+
+    // 清空搜尋內容
+    function clearSearch() {
+      document.getElementById("search-input").value = "";
+      renderBooks();
+    }
+
+    // --- 5. BUYER ACTION: BOOKING & RESERVATION (對應 FR-03) ---
+    // 開啟預約視窗
+    function openReservationModal(bookId) {
+      const book = books.find(b => b.id === bookId);
+      if (!book) return;
+
+      // 檢查是否處於不可預約的狀態 (防呆)
+      if (book.status !== "上架中" || suspendedSellers.has(book.seller)) {
+        showToast("無法預約", "此書籍已被預約或處於停權狀態！", "error");
+        return;
+      }
+
+      // 填寫 Modal 內的資訊
+      document.getElementById("modal-book-id").value = book.id;
+      document.getElementById("modal-book-title").textContent = book.title;
+      document.getElementById("modal-book-teacher").textContent = book.teacher;
+      document.getElementById("modal-book-price").textContent = `$${book.price} TWD`;
+      document.getElementById("modal-book-seller").textContent = book.seller;
+
+      // 清空先前的預約表單內容
+      document.getElementById("meetup-location").value = "";
+      document.getElementById("meetup-note").value = "";
+
+      // 顯示 Modal
+      document.getElementById("reservation-modal").classList.remove("hidden");
+    }
+
+    // 關閉預約視窗
+    function closeReservationModal() {
+      document.getElementById("reservation-modal").classList.add("hidden");
+    }
+
+    // 處理預約表單送出 (對應 FR-03)
+    function submitReservation(event) {
+      event.preventDefault(); // 阻止網頁刷新
+
+      const bookId = parseInt(document.getElementById("modal-book-id").value);
+      const location = document.getElementById("meetup-location").value;
+      const note = document.getElementById("meetup-note").value.trim();
+
+      if (!location || !note) {
+        showToast("資料不完整", "請選擇面交地點並填寫外觀特徵備註！", "error");
+        return;
+      }
+
+      // 找出書籍並更新狀態
+      const bookIndex = books.findIndex(b => b.id === bookId);
+      if (bookIndex !== -1) {
+        // 對應 FR-03 驗收條件 4: 書籍狀態變更為「已預約」，且儲存約定資訊
+        books[bookIndex].status = "已預約";
+        books[bookIndex].meetupLocation = location;
+        books[bookIndex].meetupNote = note;
+
+        // 關閉 Modal
+        closeReservationModal();
+
+        // 重新渲染列表
+        renderBooks();
+
+        showToast("預約成功！", `書籍已鎖定為「已預約」。面交地點：${location}`, "success");
+      }
+    }
+
+    // --- 6. PENALTY SYSTEM: NO-SHOW REPORT (對應 FR-05) ---
+    // 處理放鳥檢舉按鈕
+    function handleReportNoShow(bookId) {
+      const book = books.find(b => b.id === bookId);
+      if (!book) return;
+
+      const sellerName = book.seller;
+
+      // 彈出對話框進行確認，防止誤觸
+      if (!confirm(`確定要檢舉賣家 [${sellerName}] 放鳥面交嗎？\n(注意：同一賣家被檢舉累計達 2 次將會遭到系統「停權中」懲處)`)) {
+        return;
+      }
+
+      // 增加此書籍的檢舉次數 (對應 FR-05 驗收條件 5)
+      bookPenaltyCounter[bookId] = (bookPenaltyCounter[bookId] || 0) + 1;
+      book.reports = bookPenaltyCounter[bookId];
+
+      showToast("回報已送出", `您已成功檢舉賣家 [${sellerName}] 放鳥。目前該卡片檢舉累計: ${bookPenaltyCounter[bookId]}/2 次`, "warning");
+
+      // 點擊滿 2 次後，該書籍卡片與相關使用者狀態應變更為紅色的「停權中」 (對應 FR-05)
+      if (bookPenaltyCounter[bookId] >= 2) {
+        // 將該賣家加入停權黑名單
+        suspendedSellers.add(sellerName);
+
+        // 遍歷所有書籍，只要是此賣家刊登的書，一律強制變更為「停權中」
+        books.forEach(b => {
+          if (b.seller === sellerName) {
+            b.status = "停權中";
+          }
+        });
+
+        showToast("帳號停權處置！", `賣家 [${sellerName}] 已累積放鳥 2 次，系統已將其帳號狀態與所有關聯書籍變更為「停權中」！`, "error");
+      }
+
+      // 更新停權警告版面資訊
+      updateSuspensionBanner();
+
+      // 重新渲染書籍
+      renderBooks();
+    }
+
+    // 更新停權警示框
+    function updateSuspensionBanner() {
+      const banner = document.getElementById("suspension-warning-box");
+      const listSpan = document.getElementById("suspended-list");
+
+      if (suspendedSellers.size > 0) {
+        banner.classList.remove("hidden");
+        listSpan.textContent = Array.from(suspendedSellers).join("、");
+      } else {
+        banner.classList.add("hidden");
+        listSpan.textContent = "無";
+      }
+    }
+
+    // --- 7. DYNAMIC RENDERER ---
+    // 渲染書籍卡片列表
+    function renderBooks() {
+      const booksGrid = document.getElementById("books-grid");
+      const emptyState = document.getElementById("empty-state");
+      const searchInput = document.getElementById("search-input").value.trim().toLowerCase();
+      const booksCountSpan = document.getElementById("books-count");
+
+      // 清空當前列表
+      booksGrid.innerHTML = "";
+
+      // 執行即時模糊搜尋篩選 (對應 FR-02: 支援 老師名字、科目關鍵字、書籍完整名稱 三重模糊查詢)
+      // 驗收條件 3: 買家在搜尋框輸入時，下方書籍列表必須立刻進行過濾
+      let filteredBooks = books;
+      if (searchInput) {
+        filteredBooks = books.filter(book => {
+          return book.title.toLowerCase().includes(searchInput) ||
+                 book.subject.toLowerCase().includes(searchInput) ||
+                 book.teacher.toLowerCase().includes(searchInput);
+        });
+      }
+
+      // 更新書籍統計總數
+      booksCountSpan.textContent = filteredBooks.length;
+
+      // 判斷空狀態
+      if (filteredBooks.length === 0) {
+        emptyState.classList.remove("hidden");
+        return;
+      } else {
+        emptyState.classList.add("hidden");
+      }
+
+      // 逐一生成書籍卡片 (對應 FR-01, FR-02, FR-03, FR-05)
+      filteredBooks.forEach(book => {
+        // 額外保險：如果賣家在停權名單，則該書籍強制呈現「停權中」
+        if (suspendedSellers.has(book.seller)) {
+          book.status = "停權中";
+        }
+
+        const card = document.createElement("div");
+        
+        // 根據狀態設定卡片底色與樣式
+        let statusBadgeClass = "";
+        let statusText = book.status;
+        let cardBorderClass = "border-slate-200/80";
+        let isReserved = book.status === "已預約";
+        let isSuspended = book.status === "停權中";
+
+        if (isSuspended) {
+          // 停權中標籤 (紅色，對應 FR-05)
+          statusBadgeClass = "bg-rose-50 text-rose-700 border-rose-200";
+          cardBorderClass = "border-rose-200/80 bg-rose-50/20";
+        } else if (isReserved) {
+          // 已預約標籤 (黃色，對應 FR-03)
+          statusBadgeClass = "bg-amber-50 text-amber-700 border-amber-200";
+          cardBorderClass = "border-amber-200/80 bg-amber-50/10";
+        } else {
+          // 上架中標籤 (綠色，對應 FR-01)
+          statusBadgeClass = "bg-emerald-50 text-emerald-700 border-emerald-200";
+          cardBorderClass = "border-slate-200/80 bg-white/70";
+        }
+
+        // 預約按鈕的屬性 (對應 FR-03: 已預約/停權中皆須變灰鎖定停用)
+        let reserveBtnAttr = "";
+        let reserveBtnClass = "";
+        let reserveBtnText = "預約面交購買";
+
+        if (isSuspended) {
+          reserveBtnAttr = "disabled";
+          reserveBtnClass = "bg-slate-200 text-slate-400 cursor-not-allowed border border-slate-300/40";
+          reserveBtnText = "帳號已被停權";
+        } else if (isReserved) {
+          // 驗收條件 4: 預約按鈕變成灰色停用狀態
+          reserveBtnAttr = "disabled";
+          reserveBtnClass = "bg-slate-100 text-slate-400 cursor-not-allowed border border-slate-200";
+          reserveBtnText = "書籍已被預約";
+        } else {
+          reserveBtnClass = "btn-gradient text-white shadow-sm hover:shadow-md";
+        }
+
+        // 檢舉按鈕的屬性
+        let reportBtnAttr = "";
+        let reportBtnClass = "text-rose-500 hover:text-rose-600 hover:bg-rose-50 border-rose-200/50";
+        if (isSuspended) {
+          reportBtnAttr = "disabled";
+          reportBtnClass = "text-slate-400 cursor-not-allowed bg-slate-50 border-slate-200";
+        }
+
+        // 面交資訊顯示區 (僅當已預約時顯示)
+        let meetupInfoHtml = "";
+        if (isReserved) {
+          meetupInfoHtml = `
+            <div class="mt-3.5 p-3 rounded-xl bg-amber-50/70 border border-amber-200/60 text-xs text-amber-800 space-y-1">
+              <div class="flex items-center gap-1 font-bold">
+                <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path><path stroke-linecap="round" stroke-linejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                面交地標：${book.meetupLocation}
+              </div>
+              <div class="leading-relaxed"><span class="font-bold">買家外觀：</span>${book.meetupNote}</div>
+            </div>
+          `;
+        }
+
+        // 產生卡片 HTML (包含 // 對應 FR-01, FR-03, FR-05 邏輯介面)
+        card.className = `glass-card rounded-2xl p-5 md:p-6 border ${cardBorderClass} shadow-sm card-hover flex flex-col justify-between gap-4 animate-fade-in relative overflow-hidden`;
+        card.innerHTML = `
+          <!-- Status Badge -->
+          <div class="absolute top-4 right-4">
+            <span class="px-2.5 py-1 text-xs font-bold border rounded-full badge-shining ${statusBadgeClass}">
+              ${statusText}
+            </span>
+          </div>
+
+          <!-- Card Body -->
+          <div class="space-y-3">
+            <!-- Subject standard header -->
+            <div class="text-[10px] font-extrabold text-indigo-500 uppercase tracking-widest bg-indigo-50/50 border border-indigo-100/50 px-2 py-0.5 rounded inline-block">
+              ${book.subject}
+            </div>
+
+            <!-- Book Title -->
+            <h3 class="text-base font-bold text-slate-800 line-clamp-2 pr-12 pt-1 font-sans" title="${book.title}">
+              ${book.title}
+            </h3>
+
+            <!-- Metadata info (對應 FR-01 結構化呈現) -->
+            <div class="grid grid-cols-2 gap-y-2 gap-x-1 text-xs text-slate-500 font-semibold pt-1 border-t border-slate-100">
+              <div class="flex items-center gap-1.5">
+                <svg class="w-3.5 h-3.5 text-slate-400 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
+                授課老師: <span class="text-slate-700 font-bold">${book.teacher}</span>
+              </div>
+              <div class="flex items-center gap-1.5">
+                <svg class="w-3.5 h-3.5 text-slate-400 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M7 20l4-16m2 16l4-16"></path></svg>
+                ISBN: <span class="text-slate-700 font-bold">${book.isbn}</span>
+              </div>
+              <div class="flex items-center gap-1.5 col-span-2">
+                <svg class="w-3.5 h-3.5 text-slate-400 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5.121 17.804A13.937 13.937 0 0112 16c2.5 0 4.847.655 6.879 1.804M15 10a3 3 0 11-6 0 3 3 0 016 0zm6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                刊登學長姐: <span class="text-slate-700 font-bold">${book.seller}</span>
+              </div>
+            </div>
+
+            <!-- Meetup info panel if reserved -->
+            ${meetupInfoHtml}
+          </div>
+
+          <!-- Card Actions (對應 FR-03, FR-05) -->
+          <div class="pt-3 border-t border-slate-100 flex flex-col gap-2">
+            <!-- Price and Buy Info -->
+            <div class="flex justify-between items-center mb-1">
+              <span class="text-xs text-slate-400 font-bold">二手流轉價</span>
+              <span class="text-lg font-extrabold text-indigo-600">$${book.price} <span class="text-xs text-slate-400 font-normal">TWD</span></span>
+            </div>
+
+            <div class="grid grid-cols-5 gap-2">
+              <!-- 預約面交購買按鈕 (對應 FR-03) -->
+              <button onclick="openReservationModal(${book.id})" ${reserveBtnAttr} 
+                class="col-span-3 py-2.5 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1 ${reserveBtnClass}">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path></svg>
+                <span>${reserveBtnText}</span>
+              </button>
+
+              <!-- 放鳥檢舉按鈕 (對應 FR-05, 累計 2 次觸發停權) -->
+              <button onclick="handleReportNoShow(${book.id})" ${reportBtnAttr} 
+                class="col-span-2 py-2.5 px-2 rounded-xl text-xs font-bold border transition-colors flex items-center justify-center gap-1 ${reportBtnClass}"
+                title="若此交易約定後對方放鳥，可點擊此處進行檢舉。累計2次會觸發帳號停權。">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                <span>放鳥檢舉 (${bookPenaltyCounter[book.id] || 0})</span>
+              </button>
+            </div>
+          </div>
+        `;
+
+        booksGrid.appendChild(card);
+      });
+    }
+
+    // --- 8. TOAST NOTIFICATION GENERATOR ---
+    // 生成美觀的懸浮提示訊息
+    function showToast(title, message, type = "info") {
+      const container = document.getElementById("toast-container");
+      
+      const toast = document.createElement("div");
+      
+      // 根據類型設定顏色與圖擺
+      let iconColor = "text-indigo-500";
+      let bgColor = "bg-white/95 border-slate-200/80";
+      let iconSvg = `<svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>`;
+
+      if (type === "success") {
+        iconColor = "text-emerald-500";
+        bgColor = "bg-emerald-50/95 border-emerald-200";
+        iconSvg = `<svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>`;
+      } else if (type === "warning") {
+        iconColor = "text-amber-500";
+        bgColor = "bg-amber-50/95 border-amber-200";
+        iconSvg = `<svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>`;
+      } else if (type === "error") {
+        iconColor = "text-rose-500";
+        bgColor = "bg-rose-50/95 border-rose-200";
+        iconSvg = `<svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>`;
+      }
+
+      toast.className = `flex gap-3 p-4 rounded-2xl border shadow-xl backdrop-blur-md pointer-events-auto ${bgColor} toast-anim`;
+      toast.innerHTML = `
+        <div class="h-8 w-8 shrink-0 rounded-xl bg-white flex items-center justify-center shadow-sm ${iconColor}">
+          ${iconSvg}
+        </div>
+        <div class="flex-1">
+          <h4 class="text-xs font-bold text-slate-800">${title}</h4>
+          <p class="text-[10px] text-slate-500 font-medium mt-0.5">${message}</p>
+        </div>
+      `;
+
+      container.appendChild(toast);
+
+      // 4 秒後自動淡出移除
+      setTimeout(() => {
+        toast.style.transition = "opacity 0.4s ease, transform 0.4s ease";
+        toast.style.opacity = "0";
+        toast.style.transform = "translateY(-10px) translateX(-50%)";
+        setTimeout(() => {
+          toast.remove();
+        }, 400);
+      }, 4000);
+    }
+
+    // --- 9. APP INITIALIZATION ---
+    window.addEventListener("DOMContentLoaded", () => {
+      initPenaltyCounter();
+      renderBooks();
+    });
+
+  </script>
+</body>
+</html>
