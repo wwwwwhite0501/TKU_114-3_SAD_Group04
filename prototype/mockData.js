@@ -186,9 +186,9 @@ const defaultUsers = [
   // 系統管理員成員
   {
     id: "admin-411100547",
-    name: "系統管理員 (成員A)",
+    name: "廖語涵 (系統管理員)",
     studentId: "411100547",
-    password: "admin",
+    password: "yuhan0501",
     department: "日本語文學系",
     gradeClass: "C",
     role: "管理員",
@@ -200,7 +200,7 @@ const defaultUsers = [
   },
   {
     id: "admin-413638189",
-    name: "系統管理員 (成員B)",
+    name: "吳宇庭 (系統管理員)",
     studentId: "413638189",
     password: "admin",
     department: "系統管理人員",
@@ -214,7 +214,7 @@ const defaultUsers = [
   },
   {
     id: "admin-410631633",
-    name: "系統管理員 (成員C)",
+    name: "黃鈺棋 (系統管理員)",
     studentId: "410631633",
     password: "admin",
     department: "系統管理人員",

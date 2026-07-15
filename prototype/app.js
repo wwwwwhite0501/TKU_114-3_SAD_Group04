@@ -368,7 +368,7 @@ function renderUserStatusCard() {
     <p>學號: <span style="font-family:monospace; font-weight:600;">${currentUser.studentId}</span></p>
     <p>科系: <span>${currentUser.department || '無'}</span></p>
     <p>班級: <span>${currentUser.gradeClass || '無'}</span></p>
-    <p>累計被放鳥次數: <strong style="color: ${currentUser.noshowCount > 0 ? 'var(--rose-red)' : 'var(--emerald-green)'}">${currentUser.noshowCount} / 2 次</strong></p>
+    <p>累計放鳥次數: <strong style="color: ${currentUser.noshowCount > 0 ? 'var(--rose-red)' : 'var(--emerald-green)'}">${currentUser.noshowCount} / 2 次</strong></p>
     
     <div style="margin-top:0.75rem; border-top:1px dashed var(--border-color); padding-top:0.75rem;">
       <label style="font-size:0.75rem; color:var(--text-secondary); display:block; margin-bottom:0.25rem; font-weight:600;">🔄 當前操作切換</label>
@@ -600,7 +600,10 @@ function renderBooksGrid() {
         actionBtn = `<button class="btn btn-primary" disabled>您的商品</button>`;
       } else {
         const isSusp = currentUser && currentUser.isSuspended;
-        actionBtn = `<button class="btn btn-primary" ${isSusp ? 'disabled style="background:var(--text-muted); cursor:not-allowed;"' : ''} onclick="reserveBook('${book.id}')">預約購買</button>`;
+        actionBtn = `
+          <button class="btn btn-primary" ${isSusp ? 'disabled style="background:var(--text-muted); cursor:not-allowed;"' : ''} onclick="reserveBook('${book.id}')">預約購買</button>
+          <button class="btn btn-secondary" onclick="reportNonTextbook('${book.id}')" style="max-width: 70px; padding: 0.65rem 0.25rem; font-size: 0.75rem; background: rgba(244, 63, 94, 0.1); border: 1px solid rgba(244, 63, 94, 0.2); color: var(--rose-red);">⚠️ 檢舉</button>
+        `;
       }
     } else if (book.status === "已預約") {
       statusClass = "badge-reserved";
@@ -614,7 +617,7 @@ function renderBooksGrid() {
       <div class="book-card" id="book-card-${book.id}">
         
         <!-- 書籍封面區 -->
-        <div class="card-header-cover" style="background: ${book.coverColor || 'linear-gradient(135deg, #1e293b, #0f172a)'}">
+        <div class="card-header-cover" style="background: ${book.coverImage ? `url(${book.coverImage}) center/cover no-repeat` : (book.coverColor || 'linear-gradient(135deg, #1e293b, #0f172a)')}">
           <div class="book-cover-pattern"></div>
           <div class="cover-tag-container">
             <span class="cover-badge ${statusClass}">${book.status}</span>
@@ -659,6 +662,56 @@ function renderBooksGrid() {
       </div>
     `;
   }).join("");
+}
+
+// 買家檢舉違規非教科書商品
+function reportNonTextbook(bookId) {
+  if (currentUser.isSuspended) {
+    showToast("檢舉失敗！您的帳號目前處於【停權】狀態。", "error");
+    return;
+  }
+  
+  const book = books.find(b => b.id === bookId);
+  if (!book) return;
+  
+  const confirmReport = confirm(`⚠️ 您確認要檢舉《${book.title}》為「非教科書之違規雜物」商品嗎？\n\n送出後將由平台管理人員進行審理。`);
+  if (!confirmReport) return;
+  
+  const reason = prompt("請輸入檢舉的具體原因描述 (例如：販售雜物、廣告垃圾、與課程無關等)：", "販售非教科書之雜物，違反平台規範");
+  if (reason === null) return; // 取消
+  
+  const trimmedReason = reason.trim();
+  if (!trimmedReason) {
+    alert("檢舉原因不能為空！");
+    return;
+  }
+  
+  // 檢查是否已被重複檢舉
+  const isAlreadyReported = reports.some(r => r.reportedBookId === bookId);
+  if (isAlreadyReported) {
+    showToast("此商品已被他人檢舉，管理員正在審理中！", "info");
+    return;
+  }
+  
+  const newReport = {
+    id: `report-${Date.now()}`,
+    reporterName: currentUser.name,
+    reporterId: currentUser.id,
+    reportedBookId: book.id,
+    reportedBookTitle: book.title,
+    reason: trimmedReason,
+    timestamp: new Date().toISOString().slice(0, 19).replace('T', ' ')
+  };
+  
+  reports.unshift(newReport);
+  saveStateToStorage();
+  
+  if (currentUser && currentUser.role === "管理員") {
+    renderFlaggedItems();
+  }
+  
+  showToast("檢舉提交成功！管理員將會進行審理。", "success");
+  addLog(`[檢舉回報] 買家 ${currentUser.name} 檢舉商品《${book.title}》非教科書。原因: "${trimmedReason}"`);
 }
 
 // 買家預約流程
@@ -724,7 +777,7 @@ function renderReservations() {
       
       return `
         <div class="listing-row-card" style="background: rgba(30, 41, 73, 0.3); border-color: rgba(56, 189, 248, 0.15);">
-          <div class="row-cover-thumb" style="background: ${book.coverColor}">
+          <div class="row-cover-thumb" style="background: ${book.coverImage ? `url(${book.coverImage}) center/cover no-repeat` : book.coverColor}">
             採購
           </div>
           <div class="row-details">
@@ -771,7 +824,7 @@ function renderReservations() {
       
       return `
         <div class="listing-row-card" style="background: rgba(30, 41, 73, 0.3); border-color: rgba(56, 189, 248, 0.15);">
-          <div class="row-cover-thumb" style="background: ${book.coverColor}">
+          <div class="row-cover-thumb" style="background: ${book.coverImage ? `url(${book.coverImage}) center/cover no-repeat` : book.coverColor}">
             銷售
           </div>
           <div class="row-details">
@@ -847,12 +900,84 @@ function triggerDoubleBookingDemo() {
 // SELLER 功能: 上架與管理
 // -------------------------------------------------------------
 
+let currentBookImageBase64 = null;
+
+function previewBookImage(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  
+  if (!file.type.startsWith("image/")) {
+    alert("請選擇圖片檔案！");
+    event.target.value = "";
+    return;
+  }
+  
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    const img = new Image();
+    img.onload = function() {
+      // 壓縮與等比例縮小圖片
+      const canvas = document.createElement("canvas");
+      let width = img.width;
+      let height = img.height;
+      const MAX_SIZE = 300; // 最大解析度
+      
+      if (width > height) {
+        if (width > MAX_SIZE) {
+          height *= MAX_SIZE / width;
+          width = MAX_SIZE;
+        }
+      } else {
+        if (height > MAX_SIZE) {
+          width *= MAX_SIZE / height;
+          height = MAX_SIZE;
+        }
+      }
+      
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext("2d");
+      ctx.drawImage(img, 0, 0, width, height);
+      
+      // 壓縮為 jpeg，品質 0.7，以符合 localStorage 容量限制
+      currentBookImageBase64 = canvas.toDataURL("image/jpeg", 0.7);
+      
+      // 更新介面預覽
+      document.getElementById("file-upload-preview").src = currentBookImageBase64;
+      document.getElementById("file-upload-preview-container").style.display = "flex";
+      document.getElementById("file-upload-placeholder").style.display = "none";
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+function removeBookImagePreview(event) {
+  if (event) {
+    event.preventDefault();
+    event.stopPropagation();
+  }
+  currentBookImageBase64 = null;
+  const fileInput = document.getElementById("bookImageFile");
+  if (fileInput) fileInput.value = "";
+  
+  const previewContainer = document.getElementById("file-upload-preview-container");
+  const placeholder = document.getElementById("file-upload-placeholder");
+  if (previewContainer) previewContainer.style.display = "none";
+  if (placeholder) placeholder.style.display = "flex";
+}
+
 function handleBookUpload(event) {
   event.preventDefault();
   
   if (currentUser.isSuspended) {
     showToast("上架失敗！您的帳號已被停權，無法上架商品。", "error");
     addLog(`系統阻斷：遭停權之賣家 ${currentUser.name} 企圖上架書籍。`);
+    return;
+  }
+  
+  if (!currentBookImageBase64) {
+    showToast("上架失敗！請上傳書籍實體照片。", "error");
     return;
   }
   
@@ -897,6 +1022,7 @@ function handleBookUpload(event) {
     sellerId: currentUser.id,
     buyerId: null,
     coverColor: randGradient,
+    coverImage: currentBookImageBase64,
     imageSeed: "custom"
   };
   
@@ -904,6 +1030,7 @@ function handleBookUpload(event) {
   saveStateToStorage();
   
   document.getElementById("uploadForm").reset();
+  removeBookImagePreview();
   
   renderBooksGrid();
   renderSellerListings();
@@ -945,7 +1072,7 @@ function renderSellerListings() {
     
     return `
       <div class="listing-row-card">
-        <div class="row-cover-thumb" style="background: ${book.coverColor}">
+        <div class="row-cover-thumb" style="background: ${book.coverImage ? `url(${book.coverImage}) center/cover no-repeat` : book.coverColor}">
           圖書
         </div>
         <div class="row-details">
